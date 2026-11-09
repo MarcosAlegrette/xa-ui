@@ -4,7 +4,7 @@ frontend:
     preBuild:
       commands:
         - nvm use 22 || true
-        - npm ci --omit=optional
+        - npm ci
     build:
       commands:
         - npm run build
