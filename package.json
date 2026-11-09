@@ -1,0 +1,26 @@
+{
+  "name": "xa-cuatreros-galacticos-web",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "assets": "node scripts/build-assets.mjs",
+    "data": "node scripts/build-data.mjs",
+    "prepare-game": "npm run assets && npm run data",
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "test:physics": "vite build -c tests/vite.config.ts && node node_modules/.cache/xa-tests/physics.js",
+    "bench": "XA_TEST=tests/bench.ts vite build -c tests/vite.config.ts && node node_modules/.cache/xa-tests/bench.js"
+  },
+  "devDependencies": {
+    "typescript": "^7.0.2",
+    "vite": "^8.3.6"
+  },
+  "optionalDependencies": {
+    "sharp": "^0.35.5"
+  },
+  "engines": {
+    "node": ">=20.19"
+  }
+}

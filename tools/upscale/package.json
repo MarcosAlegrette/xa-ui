@@ -1,0 +1,14 @@
+{
+  "name": "xa-upscale-tools",
+  "private": true,
+  "type": "module",
+  "description": "Herramientas de preparación (sólo local): super-resolución ESRGAN de sprites/tiles/HUD. No se instalan en Amplify.",
+  "dependencies": {
+    "@tensorflow/tfjs": "^4.11.0",
+    "@tensorflow/tfjs-backend-wasm": "^4.11.0",
+    "@upscalerjs/esrgan-medium": "^1.0.0",
+    "@upscalerjs/esrgan-slim": "^1.0.0",
+    "@upscalerjs/esrgan-thick": "^1.0.0",
+    "sharp": "^0.35.5"
+  }
+}

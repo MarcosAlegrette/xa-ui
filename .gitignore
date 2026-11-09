@@ -1,0 +1,10 @@
+node_modules
+dist
+*.local
+.DS_Store
+# Cachés locales del pipeline de assets (ESRGAN) y de las pruebas
+art-src/.cache
+tools/upscale/node_modules
+tools/upscale/install.log
+# public/assets, public/icons y src/data se generan con `npm run prepare-game` y SE COMMITEAN
+# (Amplify no tiene ffmpeg, ni el modelo, ni la carpeta original/)

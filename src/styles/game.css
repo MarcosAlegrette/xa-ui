@@ -1,0 +1,144 @@
+html, body {
+  margin: 0;
+  width: 100%;
+  height: 100%;
+  background: #000;
+  overflow: hidden;
+  overscroll-behavior: none;
+  touch-action: none;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-text-size-adjust: none;
+}
+#app { position: fixed; inset: 0; overflow: hidden; }
+#game { position: absolute; inset: 0; display: block; width: 100%; height: 100%; touch-action: none; }
+body:not(.touch) #game { cursor: none; }
+/* Sonda para leer los márgenes seguros (muescas) desde JS */
+#probe {
+  position: absolute; visibility: hidden; pointer-events: none; inset: 0;
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+}
+
+/* ---------------------------------------------------------------- controles táctiles */
+#touch {
+  --ctl-size: 1;
+  --ctl-opacity: 0.55;
+  --u: min(1vh, 1vw * 0.6);
+  --sl: max(14px, env(safe-area-inset-left));
+  --sr: max(14px, env(safe-area-inset-right));
+  --sb: max(10px, env(safe-area-inset-bottom));
+  --st: max(8px, env(safe-area-inset-top));
+  position: absolute; inset: 0;
+  display: none;
+  touch-action: none;
+  -webkit-user-select: none; user-select: none;
+  -webkit-touch-callout: none;
+  z-index: 2;
+}
+body.touch.playing:not(.blocked) #touch { display: block; }
+/* Botones con el estilo del juego: borde blanco grueso (como los contornos de los sprites), aro verde oscuro,
+   esfera verde lima brillante y un reflejo arriba; íconos dibujados con los sprites de Xa. */
+#touch .tb {
+  position: absolute;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  color: #fff;
+  background:
+    radial-gradient(ellipse 60% 38% at 50% 22%, rgba(255,255,255,0.55), rgba(255,255,255,0) 70%),
+    radial-gradient(circle at 50% 40%, #b6f04a 0%, #5fb52a 45%, #2d7412 78%, #174a08 100%);
+  border: 3px solid #fff;
+  box-shadow: 0 0 0 3px rgba(20, 50, 8, 0.85), 0 5px 0 rgba(10, 30, 4, 0.6), 0 8px 18px rgba(0, 0, 0, 0.45);
+  opacity: var(--ctl-opacity);
+  transition: transform 80ms cubic-bezier(.3,1.6,.5,1), opacity 80ms, box-shadow 80ms, filter 80ms;
+  pointer-events: none; /* el hit-test lo hace touch.ts con radio generoso */
+}
+#touch .tb img { width: 86%; height: 86%; object-fit: contain; pointer-events: none; }
+#touch .tb svg { width: 46%; height: 46%; filter: drop-shadow(0 1px 1px rgba(0,0,0,.5)); }
+#touch .tb.on {
+  opacity: min(1, calc(var(--ctl-opacity) + 0.35));
+  transform: translateY(3px) scale(0.92);
+  box-shadow: 0 0 0 3px rgba(20, 50, 8, 0.85), 0 2px 0 rgba(10, 30, 4, 0.6), 0 0 22px rgba(216, 255, 138, 0.9);
+  filter: brightness(1.15);
+}
+#touch .tb.jump {
+  width: calc(27 * var(--u) * var(--ctl-size)); height: calc(27 * var(--u) * var(--ctl-size));
+  min-width: 76px; min-height: 76px;
+  right: calc(var(--sr) + 3 * var(--u)); bottom: calc(var(--sb) + 6 * var(--u));
+}
+/* Doble salto listo (en el aire): aro brillante que late */
+#touch .tb.jump.ready { animation: djpulse 0.7s ease-in-out infinite alternate; opacity: min(1, calc(var(--ctl-opacity) + 0.25)); }
+@keyframes djpulse {
+  from { box-shadow: 0 0 0 3px rgba(20, 50, 8, 0.85), 0 5px 0 rgba(10, 30, 4, 0.6), 0 0 8px 2px rgba(216, 255, 138, 0.6); }
+  to { box-shadow: 0 0 0 3px rgba(20, 50, 8, 0.85), 0 5px 0 rgba(10, 30, 4, 0.6), 0 0 26px 8px rgba(216, 255, 138, 0.95); }
+}
+#touch .tb.shoot {
+  width: calc(20 * var(--u) * var(--ctl-size)); height: calc(20 * var(--u) * var(--ctl-size));
+  min-width: 60px; min-height: 60px;
+  right: calc(var(--sr) + 33 * var(--u) * var(--ctl-size)); bottom: calc(var(--sb) + 4 * var(--u));
+  background:
+    radial-gradient(ellipse 60% 38% at 50% 22%, rgba(255,255,255,0.55), rgba(255,255,255,0) 70%),
+    radial-gradient(circle at 50% 40%, #ffd36a 0%, #f08a1c 45%, #a8410c 80%, #5e1f04 100%);
+}
+#touch .tb.shield {
+  width: calc(16 * var(--u) * var(--ctl-size)); height: calc(16 * var(--u) * var(--ctl-size));
+  min-width: 50px; min-height: 50px;
+  right: calc(var(--sr) + 9 * var(--u) * var(--ctl-size)); bottom: calc(var(--sb) + 37 * var(--u) * var(--ctl-size));
+  background:
+    radial-gradient(ellipse 60% 38% at 50% 22%, rgba(255,255,255,0.55), rgba(255,255,255,0) 70%),
+    radial-gradient(circle at 50% 40%, #a8e4ff 0%, #3a9be0 45%, #155a9c 80%, #0a2d55 100%);
+}
+#touch .tb.pause {
+  width: 44px; height: 44px; right: var(--sr); top: var(--st);
+  border-width: 2px;
+  background: radial-gradient(circle at 50% 35%, #5fb52a, #1d520a);
+  box-shadow: 0 0 0 2px rgba(20, 50, 8, 0.85), 0 3px 8px rgba(0,0,0,0.4);
+  opacity: max(0.75, var(--ctl-opacity));
+}
+#touch .joy-zone { position: absolute; left: 0; top: 0; bottom: 0; width: 50%; }
+/* Joystick: base como un "radar" verde del HUD y perilla con el brillo del casco de Xa */
+#touch .joy-base {
+  position: absolute; left: 0; top: 0;
+  width: calc(30 * var(--u) * var(--ctl-size)); height: calc(30 * var(--u) * var(--ctl-size));
+  min-width: 96px; min-height: 96px;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle, rgba(10, 40, 4, 0.25) 0%, rgba(10, 40, 4, 0.55) 62%, rgba(10, 40, 4, 0.7) 70%, rgba(0,0,0,0) 71%),
+    conic-gradient(from 0deg, rgba(216,255,138,0.0) 0deg, rgba(216,255,138,0.35) 45deg, rgba(216,255,138,0.0) 90deg, rgba(216,255,138,0.35) 135deg, rgba(216,255,138,0.0) 180deg, rgba(216,255,138,0.35) 225deg, rgba(216,255,138,0) 270deg, rgba(216,255,138,0.35) 315deg, rgba(216,255,138,0) 360deg);
+  border: 3px solid rgba(255, 255, 255, 0.85);
+  box-shadow: 0 0 0 3px rgba(20, 50, 8, 0.7), 0 6px 16px rgba(0, 0, 0, 0.4);
+  opacity: var(--ctl-opacity);
+  pointer-events: none;
+  will-change: transform;
+}
+#touch .joy-base.ghost {
+  left: calc(var(--sl) + 6 * var(--u)); top: auto; bottom: calc(var(--sb) + 6 * var(--u));
+  opacity: calc(var(--ctl-opacity) * 0.6);
+}
+#touch .joy-knob {
+  position: absolute; left: 50%; top: 50%;
+  width: 46%; height: 46%; margin: -23% 0 0 -23%;
+  border-radius: 50%;
+  border: 3px solid #fff;
+  background:
+    radial-gradient(ellipse 55% 35% at 45% 25%, rgba(255,255,255,0.85), rgba(255,255,255,0) 70%),
+    radial-gradient(circle at 50% 45%, #d8ff8a 0%, #8fd12e 45%, #3f8f1c 85%);
+  box-shadow: 0 0 0 3px rgba(20, 50, 8, 0.85), 0 4px 10px rgba(0, 0, 0, 0.45);
+  will-change: transform;
+}
+
+/* "¡Gira tu celular!": botón para pasar a pantalla completa + horizontal (Android) */
+.rotate-full {
+  display: none;
+  position: absolute; left: 50%; bottom: max(7vh, env(safe-area-inset-bottom)); transform: translateX(-50%);
+  z-index: 3;
+  padding: 14px 26px;
+  font: 700 17px/1.1 system-ui, sans-serif; color: #fff;
+  border: 3px solid #fff; border-radius: 999px;
+  background: radial-gradient(ellipse 60% 40% at 50% 20%, rgba(255,255,255,.5), rgba(255,255,255,0) 70%), linear-gradient(#7ec02a, #2d7412);
+  box-shadow: 0 0 0 3px rgba(20,50,8,.85), 0 6px 16px rgba(0,0,0,.5);
+  text-shadow: 0 1px 2px rgba(0,0,0,.6);
+  white-space: nowrap;
+}
+body.blocked .rotate-full { display: block; }
